@@ -1,0 +1,231 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Clone Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f0f2f5;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #075e54;
+      color: white;
+      padding: 10px 20px;
+    }
+    .profile-pic {
+      height: 35px;
+      width: 35px;
+      border-radius: 50%;
+    }
+    #chat-container {
+      display: flex;
+      flex: 1;
+    }
+    #users-list {
+      width: 250px;
+      background: #ffffff;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    #users-list li {
+      list-style: none;
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    #users-list li:hover {
+      background: #f0f0f0;
+    }
+    .chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .msg {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 8px;
+      max-width: 60%;
+    }
+    .sent {
+      align-self: flex-end;
+      background-color: #dcf8c6;
+    }
+    .received {
+      align-self: flex-start;
+      background-color: #ffffff;
+    }
+    .timestamp {
+      font-size: 10px;
+      color: gray;
+    }
+    #input-container {
+      display: flex;
+      padding: 10px;
+      background: #eee;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+    }
+    #send-btn {
+      margin-left: 10px;
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="user-profile"></div>
+    <div>
+      <button id="sign-in-btn">Sign in with Google</button>
+      <button id="sign-out-btn" style="display: none;">Sign Out</button>
+    </div>
+  </header>  <div id="chat-container">
+    <ul id="users-list"></ul>
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      <h3 id="chat-with" style="margin: 10px;">Select a user to chat</h3>
+      <div id="chat-area" class="chat-box"></div>
+      <div id="input-container">
+        <input id="message-input" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
+  </div>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqjpKtYOMPpdp93nY-LQn569pw6c-CsbQ",
+      authDomain: "real-225f0.firebaseapp.com",
+      projectId: "real-225f0",
+      storageBucket: "real-225f0.appspot.com",
+      messagingSenderId: "333960580528",
+      appId: "1:333960580528:web:2fd8e0cf1eab6cdd909a75"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    const signInBtn = document.getElementById("sign-in-btn");
+    const signOutBtn = document.getElementById("sign-out-btn");
+    const userProfile = document.getElementById("user-profile");
+    const usersList = document.getElementById("users-list");
+    const chatArea = document.getElementById("chat-area");
+    const messageInput = document.getElementById("message-input");
+    const sendBtn = document.getElementById("send-btn");
+    const chatWithLabel = document.getElementById("chat-with");
+
+    let currentUser = null;
+    let currentChatId = null;
+    let unsubscribeChat = null;
+
+    signInBtn.addEventListener("click", () => auth.signInWithPopup(provider));
+    signOutBtn.addEventListener("click", () => auth.signOut());
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        userProfile.innerHTML = `<img src="${user.photoURL}" class="profile-pic"> <span>${user.displayName}</span>`;
+        signInBtn.style.display = "none";
+        signOutBtn.style.display = "inline-block";
+        fetchUsers();
+      } else {
+        currentUser = null;
+        userProfile.innerHTML = "";
+        signInBtn.style.display = "inline-block";
+        signOutBtn.style.display = "none";
+        usersList.innerHTML = "";
+        chatArea.innerHTML = "";
+      }
+    });
+
+    function fetchUsers() {
+      db.collection("users").onSnapshot(snapshot => {
+        usersList.innerHTML = "";
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          if (user.uid !== currentUser.uid) {
+            const li = document.createElement("li");
+            li.textContent = user.displayName;
+            li.addEventListener("click", () => openPrivateChat(user));
+            usersList.appendChild(li);
+          }
+        });
+      });
+
+      db.collection("users").doc(currentUser.uid).set({
+        uid: currentUser.uid,
+        displayName: currentUser.displayName,
+        photoURL: currentUser.photoURL
+      });
+    }
+
+    function openPrivateChat(otherUser) {
+      chatWithLabel.textContent = `Chat with ${otherUser.displayName}`;
+      const chatId = getPrivateChatId(currentUser.uid, otherUser.uid);
+      currentChatId = chatId;
+      if (unsubscribeChat) unsubscribeChat();
+
+      chatArea.innerHTML = "";
+
+      unsubscribeChat = db
+        .collection("privateChats")
+        .doc(chatId)
+        .collection("messages")
+        .orderBy("timestamp")
+        .onSnapshot(snapshot => {
+          chatArea.innerHTML = "";
+          snapshot.forEach(doc => {
+            const msg = doc.data();
+            const msgDiv = document.createElement("div");
+            msgDiv.className = msg.sender === currentUser.uid ? "msg sent" : "msg received";
+            msgDiv.innerHTML = `
+              <p>${msg.text}</p>
+              <span class="timestamp">${new Date(msg.timestamp?.toDate()).toLocaleTimeString()}</span>
+            `;
+            chatArea.appendChild(msgDiv);
+          });
+          chatArea.scrollTop = chatArea.scrollHeight;
+        });
+    }
+
+    function getPrivateChatId(uid1, uid2) {
+      return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !currentChatId) return;
+
+      db.collection("privateChats")
+        .doc(currentChatId)
+        .collection("messages")
+        .add({
+          sender: currentUser.uid,
+          text,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+      messageInput.value = "";
+    }
+  </script></body>
+</html>
