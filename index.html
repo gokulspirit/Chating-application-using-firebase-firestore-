@@ -1,231 +1,232 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp Clone Chat App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WhatsApp-like Chat App</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: #f0f2f5;
+      margin: 0; padding: 0;
+      background: #f2f2f2;
     }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #075e54;
+    .container {
+      max-width: 400px;
+      margin: auto;
+      padding: 20px;
+    }
+    .hidden { display: none; }
+    .chat-box, .login-box, .register-box, .dashboard {
+      border: 1px solid #ccc;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .input {
+      margin: 10px 0;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .btn {
+      background: green;
       color: white;
-      padding: 10px 20px;
-    }
-    .profile-pic {
-      height: 35px;
-      width: 35px;
-      border-radius: 50%;
-    }
-    #chat-container {
-      display: flex;
-      flex: 1;
-    }
-    #users-list {
-      width: 250px;
-      background: #ffffff;
-      border-right: 1px solid #ccc;
-      overflow-y: auto;
-      padding: 10px;
-    }
-    #users-list li {
-      list-style: none;
-      padding: 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    #users-list li:hover {
-      background: #f0f0f0;
-    }
-    .chat-box {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    .msg {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 8px;
-      max-width: 60%;
-    }
-    .sent {
-      align-self: flex-end;
-      background-color: #dcf8c6;
-    }
-    .received {
-      align-self: flex-start;
-      background-color: #ffffff;
-    }
-    .timestamp {
-      font-size: 10px;
-      color: gray;
-    }
-    #input-container {
-      display: flex;
-      padding: 10px;
-      background: #eee;
-    }
-    #message-input {
-      flex: 1;
-      padding: 10px;
+      padding: 10px 15px;
       border: none;
-      border-radius: 4px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px 0;
     }
-    #send-btn {
-      margin-left: 10px;
-      padding: 10px 20px;
+    .user-item {
+      padding: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      margin: 5px 0;
+      cursor: pointer;
+    }
+    .chat-log {
+      height: 250px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .chat-msg {
+      margin: 5px 0;
+      background: #dcf8c6;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    .chat-time {
+      font-size: 0.7em;
+      color: #666;
+      float: right;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div id="user-profile"></div>
-    <div>
-      <button id="sign-in-btn">Sign in with Google</button>
-      <button id="sign-out-btn" style="display: none;">Sign Out</button>
+  <div class="container">
+    <!-- Register -->
+    <div id="register" class="register-box">
+      <h2>Register</h2>
+      <input type="text" id="regUsername" class="input" placeholder="Username">
+      <input type="email" id="regEmail" class="input" placeholder="Email">
+      <input type="password" id="regPassword" class="input" placeholder="Password">
+      <button class="btn" onclick="registerUser()">Register</button>
+      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
     </div>
-  </header>  <div id="chat-container">
-    <ul id="users-list"></ul>
-    <div style="flex: 1; display: flex; flex-direction: column;">
-      <h3 id="chat-with" style="margin: 10px;">Select a user to chat</h3>
-      <div id="chat-area" class="chat-box"></div>
-      <div id="input-container">
-        <input id="message-input" placeholder="Type a message..." />
-        <button id="send-btn">Send</button>
-      </div>
+
+    <!-- Login -->
+    <div id="login" class="login-box hidden">
+      <h2>Login</h2>
+      <input type="text" id="loginUsername" class="input" placeholder="Username">
+      <input type="password" id="loginPassword" class="input" placeholder="Password">
+      <button class="btn" onclick="loginUser()">Login</button>
+      <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
     </div>
-  </div>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBqjpKtYOMPpdp93nY-LQn569pw6c-CsbQ",
-      authDomain: "real-225f0.firebaseapp.com",
-      projectId: "real-225f0",
-      storageBucket: "real-225f0.appspot.com",
-      messagingSenderId: "333960580528",
-      appId: "1:333960580528:web:2fd8e0cf1eab6cdd909a75"
-    };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard hidden">
+      <h2>Welcome, <span id="currentUser"></span></h2>
+      <h3>Start a chat:</h3>
+      <div id="userList"></div>
+      <button class="btn" onclick="logoutUser()">Logout</button>
+    </div>
 
-    const signInBtn = document.getElementById("sign-in-btn");
-    const signOutBtn = document.getElementById("sign-out-btn");
-    const userProfile = document.getElementById("user-profile");
-    const usersList = document.getElementById("users-list");
-    const chatArea = document.getElementById("chat-area");
-    const messageInput = document.getElementById("message-input");
-    const sendBtn = document.getElementById("send-btn");
-    const chatWithLabel = document.getElementById("chat-with");
+    <!-- Chat -->
+    <div id="chat" class="chat-box hidden">
+      <h3>Chat with <span id="chatWith"></span></h3>
+      <div class="chat-log" id="chatLog"></div>
+      <input type="text" id="chatInput" class="input" placeholder="Type a message...">
+      <button class="btn" onclick="sendMessage()">Send</button>
+      <button class="btn" onclick="goBack()">Back</button>
+    </div>
+  </div>
 
+  <script>
     let currentUser = null;
-    let currentChatId = null;
-    let unsubscribeChat = null;
+    let currentChatUser = null;
 
-    signInBtn.addEventListener("click", () => auth.signInWithPopup(provider));
-    signOutBtn.addEventListener("click", () => auth.signOut());
+    function showLogin() {
+      document.getElementById('register').classList.add('hidden');
+      document.getElementById('login').classList.remove('hidden');
+    }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        userProfile.innerHTML = `<img src="${user.photoURL}" class="profile-pic"> <span>${user.displayName}</span>`;
-        signInBtn.style.display = "none";
-        signOutBtn.style.display = "inline-block";
-        fetchUsers();
-      } else {
-        currentUser = null;
-        userProfile.innerHTML = "";
-        signInBtn.style.display = "inline-block";
-        signOutBtn.style.display = "none";
-        usersList.innerHTML = "";
-        chatArea.innerHTML = "";
-      }
-    });
+    function showRegister() {
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('register').classList.remove('hidden');
+    }
 
-    function fetchUsers() {
-      db.collection("users").onSnapshot(snapshot => {
-        usersList.innerHTML = "";
-        snapshot.forEach(doc => {
-          const user = doc.data();
-          if (user.uid !== currentUser.uid) {
-            const li = document.createElement("li");
-            li.textContent = user.displayName;
-            li.addEventListener("click", () => openPrivateChat(user));
-            usersList.appendChild(li);
-          }
-        });
+    function registerUser() {
+      const username = document.getElementById('regUsername').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+
+      if (!username || !email || !password) return alert("All fields are required");
+
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      if (users.find(u => u.username === username)) return alert("Username already exists");
+
+      users.push({ username, email, password });
+      localStorage.setItem('users', JSON.stringify(users));
+      alert("Registration successful! Please login.");
+      showLogin();
+    }
+
+    function loginUser() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.username === username && u.password === password);
+
+      if (!user) return alert("Invalid credentials");
+      localStorage.setItem('loggedInUser', username);
+      loadDashboard();
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('loggedInUser');
+      location.reload();
+    }
+
+    function loadDashboard() {
+      currentUser = localStorage.getItem('loggedInUser');
+      if (!currentUser) return;
+
+      document.getElementById('register').classList.add('hidden');
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('currentUser').innerText = currentUser;
+
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const list = document.getElementById('userList');
+      list.innerHTML = '';
+      users.forEach(u => {
+        if (u.username !== currentUser) {
+          const div = document.createElement('div');
+          div.className = 'user-item';
+          div.innerText = u.username;
+          div.onclick = () => startChat(u.username);
+          list.appendChild(div);
+        }
       });
+    }
 
-      db.collection("users").doc(currentUser.uid).set({
-        uid: currentUser.uid,
-        displayName: currentUser.displayName,
-        photoURL: currentUser.photoURL
+    function startChat(user) {
+      currentChatUser = user;
+      document.getElementById('chatWith').innerText = user;
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('chat').classList.remove('hidden');
+      loadChat();
+    }
+
+    function goBack() {
+      currentChatUser = null;
+      document.getElementById('chat').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+    }
+
+    function getChatKey() {
+      const sorted = [currentUser, currentChatUser].sort();
+      return `chat_${sorted[0]}_${sorted[1]}`;
+    }
+
+    function loadChat() {
+      const key = getChatKey();
+      const chats = JSON.parse(localStorage.getItem(key) || '[]');
+      const log = document.getElementById('chatLog');
+      log.innerHTML = '';
+      chats.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-msg';
+        div.innerHTML = `<strong>${msg.sender}</strong>: ${msg.text} <span class="chat-time">${msg.time}</span>`;
+        log.appendChild(div);
       });
+      log.scrollTop = log.scrollHeight;
     }
 
-    function openPrivateChat(otherUser) {
-      chatWithLabel.textContent = `Chat with ${otherUser.displayName}`;
-      const chatId = getPrivateChatId(currentUser.uid, otherUser.uid);
-      currentChatId = chatId;
-      if (unsubscribeChat) unsubscribeChat();
-
-      chatArea.innerHTML = "";
-
-      unsubscribeChat = db
-        .collection("privateChats")
-        .doc(chatId)
-        .collection("messages")
-        .orderBy("timestamp")
-        .onSnapshot(snapshot => {
-          chatArea.innerHTML = "";
-          snapshot.forEach(doc => {
-            const msg = doc.data();
-            const msgDiv = document.createElement("div");
-            msgDiv.className = msg.sender === currentUser.uid ? "msg sent" : "msg received";
-            msgDiv.innerHTML = `
-              <p>${msg.text}</p>
-              <span class="timestamp">${new Date(msg.timestamp?.toDate()).toLocaleTimeString()}</span>
-            `;
-            chatArea.appendChild(msgDiv);
-          });
-          chatArea.scrollTop = chatArea.scrollHeight;
-        });
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      const key = getChatKey();
+      const chats = JSON.parse(localStorage.getItem(key) || '[]');
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      chats.push({ sender: currentUser, text: msg, time: timestamp });
+      localStorage.setItem(key, JSON.stringify(chats));
+      input.value = '';
+      loadChat();
     }
 
-    function getPrivateChatId(uid1, uid2) {
-      return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-    }
-
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", e => {
+    // Enter key handler
+    document.getElementById('chatInput').addEventListener("keyup", function(e) {
       if (e.key === "Enter") sendMessage();
     });
 
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || !currentChatId) return;
-
-      db.collection("privateChats")
-        .doc(currentChatId)
-        .collection("messages")
-        .add({
-          sender: currentUser.uid,
-          text,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-      messageInput.value = "";
-    }
-  </script></body>
+    if (localStorage.getItem('loggedInUser')) loadDashboard();
+  </script>
+</body>
 </html>
