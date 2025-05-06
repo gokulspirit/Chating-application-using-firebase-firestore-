@@ -1,232 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WhatsApp-like Chat App</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: #f2f2f2;
-    }
-    .container {
-      max-width: 400px;
-      margin: auto;
-      padding: 20px;
-    }
-    .hidden { display: none; }
-    .chat-box, .login-box, .register-box, .dashboard {
-      border: 1px solid #ccc;
-      padding: 15px;
-      background: white;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-    .input {
-      margin: 10px 0;
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .btn {
-      background: green;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 5px 0;
-    }
-    .user-item {
-      padding: 10px;
-      background: #e0e0e0;
-      border-radius: 5px;
-      margin: 5px 0;
-      cursor: pointer;
-    }
-    .chat-log {
-      height: 250px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-    }
-    .chat-msg {
-      margin: 5px 0;
-      background: #dcf8c6;
-      padding: 5px 10px;
-      border-radius: 5px;
-    }
-    .chat-time {
-      font-size: 0.7em;
-      color: #666;
-      float: right;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Register -->
-    <div id="register" class="register-box">
-      <h2>Register</h2>
-      <input type="text" id="regUsername" class="input" placeholder="Username">
-      <input type="email" id="regEmail" class="input" placeholder="Email">
-      <input type="password" id="regPassword" class="input" placeholder="Password">
-      <button class="btn" onclick="registerUser()">Register</button>
-      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+    <div id="sign-in-container">
+        <button id="google-sign-in">Sign In with Google</button>
     </div>
 
-    <!-- Login -->
-    <div id="login" class="login-box hidden">
-      <h2>Login</h2>
-      <input type="text" id="loginUsername" class="input" placeholder="Username">
-      <input type="password" id="loginPassword" class="input" placeholder="Password">
-      <button class="btn" onclick="loginUser()">Login</button>
-      <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+    <div id="chat-container" style="display: none;">
+        <div id="chat-header">
+            <h2>Chat</h2>
+            <button id="sign-out">Sign Out</button>
+        </div>
+        <div id="messages-container"></div>
+        <textarea id="message-input" placeholder="Type a message..."></textarea>
+        <button id="send-message">Send</button>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dashboard" class="dashboard hidden">
-      <h2>Welcome, <span id="currentUser"></span></h2>
-      <h3>Start a chat:</h3>
-      <div id="userList"></div>
-      <button class="btn" onclick="logoutUser()">Logout</button>
-    </div>
-
-    <!-- Chat -->
-    <div id="chat" class="chat-box hidden">
-      <h3>Chat with <span id="chatWith"></span></h3>
-      <div class="chat-log" id="chatLog"></div>
-      <input type="text" id="chatInput" class="input" placeholder="Type a message...">
-      <button class="btn" onclick="sendMessage()">Send</button>
-      <button class="btn" onclick="goBack()">Back</button>
-    </div>
-  </div>
-
-  <script>
-    let currentUser = null;
-    let currentChatUser = null;
-
-    function showLogin() {
-      document.getElementById('register').classList.add('hidden');
-      document.getElementById('login').classList.remove('hidden');
-    }
-
-    function showRegister() {
-      document.getElementById('login').classList.add('hidden');
-      document.getElementById('register').classList.remove('hidden');
-    }
-
-    function registerUser() {
-      const username = document.getElementById('regUsername').value;
-      const email = document.getElementById('regEmail').value;
-      const password = document.getElementById('regPassword').value;
-
-      if (!username || !email || !password) return alert("All fields are required");
-
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      if (users.find(u => u.username === username)) return alert("Username already exists");
-
-      users.push({ username, email, password });
-      localStorage.setItem('users', JSON.stringify(users));
-      alert("Registration successful! Please login.");
-      showLogin();
-    }
-
-    function loginUser() {
-      const username = document.getElementById('loginUsername').value;
-      const password = document.getElementById('loginPassword').value;
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.username === username && u.password === password);
-
-      if (!user) return alert("Invalid credentials");
-      localStorage.setItem('loggedInUser', username);
-      loadDashboard();
-    }
-
-    function logoutUser() {
-      localStorage.removeItem('loggedInUser');
-      location.reload();
-    }
-
-    function loadDashboard() {
-      currentUser = localStorage.getItem('loggedInUser');
-      if (!currentUser) return;
-
-      document.getElementById('register').classList.add('hidden');
-      document.getElementById('login').classList.add('hidden');
-      document.getElementById('dashboard').classList.remove('hidden');
-      document.getElementById('currentUser').innerText = currentUser;
-
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const list = document.getElementById('userList');
-      list.innerHTML = '';
-      users.forEach(u => {
-        if (u.username !== currentUser) {
-          const div = document.createElement('div');
-          div.className = 'user-item';
-          div.innerText = u.username;
-          div.onclick = () => startChat(u.username);
-          list.appendChild(div);
-        }
-      });
-    }
-
-    function startChat(user) {
-      currentChatUser = user;
-      document.getElementById('chatWith').innerText = user;
-      document.getElementById('dashboard').classList.add('hidden');
-      document.getElementById('chat').classList.remove('hidden');
-      loadChat();
-    }
-
-    function goBack() {
-      currentChatUser = null;
-      document.getElementById('chat').classList.add('hidden');
-      document.getElementById('dashboard').classList.remove('hidden');
-    }
-
-    function getChatKey() {
-      const sorted = [currentUser, currentChatUser].sort();
-      return `chat_${sorted[0]}_${sorted[1]}`;
-    }
-
-    function loadChat() {
-      const key = getChatKey();
-      const chats = JSON.parse(localStorage.getItem(key) || '[]');
-      const log = document.getElementById('chatLog');
-      log.innerHTML = '';
-      chats.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = 'chat-msg';
-        div.innerHTML = `<strong>${msg.sender}</strong>: ${msg.text} <span class="chat-time">${msg.time}</span>`;
-        log.appendChild(div);
-      });
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const msg = input.value.trim();
-      if (!msg) return;
-      const key = getChatKey();
-      const chats = JSON.parse(localStorage.getItem(key) || '[]');
-      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      chats.push({ sender: currentUser, text: msg, time: timestamp });
-      localStorage.setItem(key, JSON.stringify(chats));
-      input.value = '';
-      loadChat();
-    }
-
-    // Enter key handler
-    document.getElementById('chatInput').addEventListener("keyup", function(e) {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    if (localStorage.getItem('loggedInUser')) loadDashboard();
-  </script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
