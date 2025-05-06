@@ -1,26 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Firebase Chat App</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div id="sign-in-container">
-        <button id="google-sign-in">Sign In with Google</button>
+  <div class="container">
+
+    <!-- Register -->
+    <div id="register" class="register-box">
+      <h2>Register</h2>
+      <input type="text" id="regUsername" class="input" placeholder="Username">
+      <input type="email" id="regEmail" class="input" placeholder="Email">
+      <input type="password" id="regPassword" class="input" placeholder="Password">
+      <button class="btn" onclick="registerUser()">Register</button>
+      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
     </div>
 
-    <div id="chat-container" style="display: none;">
-        <div id="chat-header">
-            <h2>Chat</h2>
-            <button id="sign-out">Sign Out</button>
-        </div>
-        <div id="messages-container"></div>
-        <textarea id="message-input" placeholder="Type a message..."></textarea>
-        <button id="send-message">Send</button>
+    <!-- Login -->
+    <div id="login" class="login-box hidden">
+      <h2>Login</h2>
+      <input type="email" id="loginEmail" class="input" placeholder="Email">
+      <input type="password" id="loginPassword" class="input" placeholder="Password">
+      <button class="btn" onclick="loginUser()">Login</button>
+      <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard hidden">
+      <h2>Welcome, <span id="currentUser"></span></h2>
+      <h3>Start a chat:</h3>
+      <div id="userList"></div>
+      <button class="btn" onclick="logoutUser()">Logout</button>
+    </div>
+
+    <!-- Chat -->
+    <div id="chat" class="chat-box hidden">
+      <h3>Chat with <span id="chatWith"></span></h3>
+      <div class="chat-log" id="chatLog"></div>
+      <input type="text" id="chatInput" class="input" placeholder="Type a message...">
+      <button class="btn" onclick="sendMessage()">Send</button>
+      <button class="btn" onclick="goBack()">Back</button>
+    </div>
+
+  </div>
+
+  <!-- Firebase and Script -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
